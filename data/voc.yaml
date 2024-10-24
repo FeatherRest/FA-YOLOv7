@@ -1,0 +1,18 @@
+# COCO 2017 dataset http://cocodataset.org
+
+# download command/URL (optional)
+download: bash ./scripts/get_coco.sh
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ./datasets/VOCData/labels/train/train2017.txt  # 118287 images
+val: ./datasets/VOCData/labels/val/val2017.txt  # 5000 images
+test: ./datasets/VOCData/labels/test/test2017.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794
+
+# number of classes
+nc: 20
+
+# class names
+names: ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus",
+           "car", "cat", "chair", "cow", "diningtable", "dog", "horse",
+           "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+

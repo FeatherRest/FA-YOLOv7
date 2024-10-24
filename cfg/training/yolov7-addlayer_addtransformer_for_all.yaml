@@ -1,0 +1,89 @@
+# parameters
+nc: 5  # number of classes
+depth_multiple: 1.0  # model depth multiple
+width_multiple: 1.0  # layer channel multiple
+
+# anchors
+anchors:
+  - [12,16, 19,36, 40,28]  # P3/8
+  - [36,75, 76,55, 72,146]  # P4/16
+  - [142,110, 192,243, 459,401]  # P5/32
+
+# yolov7 backbone
+backbone:
+  # [from, number, module, args]
+  [[-1, 1, Conv, [32, 3, 1]],  # 0
+  
+   [-1, 1, Conv, [64, 3, 2]],  # 1-P1/2      
+   [-1, 1, Conv, [64, 3, 1]],
+   
+   [-1, 1, V7DownSampling, [128]],  # 3-P2/4  
+   [-1, 1, Yolov7_E_ELAN, [256, 64]], # 4
+         
+   [-1, 1, V7DownSampling, [128]],  # 5-P3/8  
+   [-1, 1, Yolov7_E_ELAN, [512, 128]], # 6
+         
+   [-1, 1, V7DownSampling, [256]],  # 7-P4/16  
+   [-1, 1, Yolov7_E_ELAN, [1024, 256]], # 8
+         
+   [-1, 1, V7DownSampling, [512]],  # 9-P5/32  
+   [-1, 1, Yolov7_E_ELAN, [1024, 256]],  # 10
+   [-1, 1, Conv_BIATT, [1024, 1, 1]]
+  ]
+
+# yolov7 head
+head:
+   [[-1, 1, SPPCSPC, [512]], # 12    512*20*20
+
+   [-1, 1, Conv, [256, 1, 1]],       # 13  256*20*20
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],    #14  256*40*40
+   [8, 1, Conv, [256, 1, 1]], # 15 route backbone P4    256*40*40
+   [[-1, -2], 1, Concat, [1]], # 16        #256*40*40
+   
+   [-1, 1, Yolov7_E_ELAN_NECK, [256, 128]], # 17       #256*40*40
+   [-1, 1, DSConv2D, [128, 1, 1]], #18
+
+   [-1, 1, Conv, [128, 1, 1]],     #19   128*40*40
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],      #20  128*80*80
+   [6, 1, Conv, [128, 1, 1]], # 21 route backbone P3  #128*80*80
+   [[-1, -2], 1, Concat, [1]], # 22       128*80*80
+   
+   [-1, 1, Yolov7_E_ELAN_NECK, [128, 64]], # 23   #128*80*80
+
+   [-1, 1, DSConv2D, [64, 1, 1]],         #24  64*80*80
+
+
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],    #25   64*160*160
+   [4, 1, Conv, [64, 1, 1]], # 26   route backbone P2   64*160*160
+   [[-1, -2], 1, Concat, [1]], # 27      64*160*160
+
+
+   [-1, 1, Yolov7_E_ELAN_NECK, [64, 32]], # 287    64*160*160
+   [-1, 1, DSConv2D, [32, 1, 1]],#29
+      
+   [[-1, 22], 1, V7DownSampling_Neck, [64]], # 30    64*80*80
+   
+   [-1, 1, Yolov7_E_ELAN_NECK, [128, 64]], # 31      128*80*80
+
+
+      
+   [[-1, 17], 1, V7DownSampling_Neck, [128]], # 32    128*40*40
+   
+   [-1, 1, Yolov7_E_ELAN_NECK, [256, 128]], # 33       256*40*40
+
+
+
+   [[-1, 12], 1, V7DownSampling_Neck, [256]], # 34    256*20*20
+   
+   [-1, 1, Yolov7_E_ELAN_NECK, [512, 256]], # 35    512*20*20
+
+
+   
+  
+   [31, 1, RepConv, [256, 3, 1]], # 36
+   [33, 1, RepConv, [512, 3, 1]], # 37
+   [35, 1, RepConv, [1024, 3, 1]], # 38
+
+
+   [[36,37,38], 1, IDetect, [nc, anchors]],   # Detect(P3, P4, P5)
+  ]
